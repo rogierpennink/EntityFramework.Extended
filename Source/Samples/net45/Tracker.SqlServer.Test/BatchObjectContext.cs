@@ -42,6 +42,20 @@ namespace Tracker.SqlServer.Test
                 .Update(u => new User { IsApproved = false, LastActivityDate = DateTime.Now });
         }
 
+		[Fact]
+	    public void UpdateConditional()
+	    {
+		    var db = new TrackerEntities();
+		    string emailDomain = "@test.com";
+		    int count = db.Users
+			    .Where(u => u.EmailAddress.EndsWith(emailDomain))
+			    .Update(u => new User()
+			    {
+					EmailAddress = u.EmailAddress.EndsWith(emailDomain) ? u.EmailAddress : emailDomain,
+				    LastActivityDate = DateTime.Now
+			    });
+	    }
+
         [Fact]
         public void UpdateWithExpressionContainingNullParameter()
         {

@@ -108,7 +108,26 @@ namespace Tracker.SqlServer.Test
                 });
         }
 
-        [Fact]
+		[Fact]
+		public void UpdateConditional()
+		{
+			var db = new TrackerContext();
+			string emailDomain = "@test.com";
+			int count = db.Users
+				.Where(u => u.EmailAddress.EndsWith(emailDomain))
+				.Update(u => new User()
+				{
+					EmailAddress = u.EmailAddress.EndsWith(emailDomain) ? u.EmailAddress : emailDomain,
+					LastActivityDate = DateTime.Now,
+					Address = new Address
+					{
+						Street = "Teststreet",
+						HouseNumber = "1"
+					}
+				});
+		}
+		
+		[Fact]
         public void UpdateJoin()
         {
             var db = new TrackerContext();

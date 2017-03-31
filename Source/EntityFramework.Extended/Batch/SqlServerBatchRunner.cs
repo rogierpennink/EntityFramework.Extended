@@ -2,6 +2,8 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Data.Entity.Core.EntityClient;
+using System.Data.Entity.Core.Mapping;
+using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Linq.Dynamic;
@@ -285,13 +287,61 @@ namespace EntityFramework.Batch
 
                         if (value != null)
                         {
-                            string parameterName = "p__update__" + nameCount++;
-                            var parameter = updateCommand.CreateParameter();
-                            parameter.ParameterName = parameterName;
-                            parameter.Value = value;
-                            updateCommand.Parameters.Add(parameter);
+	                        bool paramHandled = false;
 
-                            sqlBuilder.AppendFormat("[{0}] = @{1}", columnName, parameterName);
+	                        var complexTypeInitExpression = memberExpression as MemberInitExpression;
+	                        if (complexTypeInitExpression != null)
+	                        {
+								var items = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.OSpace);
+								EdmType edmType;
+								if (items.TryGetType(memberExpression.Type.Name, memberExpression.Type.Namespace, out edmType))
+								{
+									if (edmType.BuiltInTypeKind == BuiltInTypeKind.ComplexType)
+									{
+										paramHandled = true;
+
+										var propertyMap = entityMap.PropertyMaps.FirstOrDefault(m => m.PropertyName == edmType.Name);
+										if (propertyMap == null)
+											throw new ArgumentException("The complex type property is not mapped on the current entity.");
+
+										var complexTypePrefix = propertyMap.ColumnName ?? propertyMap.PropertyName;
+										var wroteComplexSet = false;
+
+										foreach (var initBinding in complexTypeInitExpression.Bindings)
+										{
+											var assignment = initBinding as MemberAssignment;
+											if (assignment == null)
+												continue;
+
+											if (wroteComplexSet)
+												sqlBuilder.AppendLine(", ");
+										
+											var complexColumnName = complexTypePrefix + "_" + assignment.Member.Name;
+											LambdaExpression lambda = Expression.Lambda(assignment.Expression, null);
+
+											string parameterName = "p__update__" + nameCount++;
+											var parameter = updateCommand.CreateParameter();
+											parameter.ParameterName = parameterName;
+											parameter.Value = lambda.Compile().DynamicInvoke();
+											updateCommand.Parameters.Add(parameter);
+											sqlBuilder.AppendFormat("[{0}] = @{1}", complexColumnName, parameterName);
+											
+											wroteComplexSet = true;
+										}
+									}
+								}
+							}
+
+	                        if (!paramHandled)
+	                        {
+								string parameterName = "p__update__" + nameCount++;
+								var parameter = updateCommand.CreateParameter();
+								parameter.ParameterName = parameterName;
+								parameter.Value = value;
+								updateCommand.Parameters.Add(parameter);
+
+								sqlBuilder.AppendFormat("[{0}] = @{1}", columnName, parameterName);
+							}
                         }
                         else
                         {
@@ -329,6 +379,7 @@ namespace EntityFramework.Batch
                         string alias = match.Groups["TableAlias"].Value;
 
                         value = value.Replace(alias + ".", "");
+	                    value = Regex.Replace(value, @"(\[[^\]]+\])", "j0.$1");
 
                         foreach (ObjectParameter objectParameter in selectQuery.Parameters)
                         {
