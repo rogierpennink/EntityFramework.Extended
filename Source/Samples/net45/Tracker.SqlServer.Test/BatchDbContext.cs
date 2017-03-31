@@ -119,7 +119,7 @@ namespace Tracker.SqlServer.Test
 				{
 					EmailAddress = u.EmailAddress.EndsWith(emailDomain) ? u.EmailAddress : emailDomain,
 					LastActivityDate = DateTime.Now,
-					Address = new Address
+					UserAddress = new Address
 					{
 						Street = "Teststreet",
 						HouseNumber = "1"

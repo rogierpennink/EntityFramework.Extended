@@ -7,7 +7,7 @@ namespace Tracker.SqlServer.CodeFirst.Entities
 {
     public partial class User
     {
-		public Address Address { get; set; }
+		public Address UserAddress { get; set; }
     }
 
 	[ComplexType]

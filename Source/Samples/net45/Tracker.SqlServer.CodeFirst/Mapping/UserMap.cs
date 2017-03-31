@@ -10,10 +10,10 @@ namespace Tracker.SqlServer.CodeFirst.Mapping
     {
         public void InitializeMapping()
         {
-	        Property(t => t.Address.Street)
+	        Property(t => t.UserAddress.Street)
 		        //.HasColumnName("Address_Street")
 		        .IsOptional();
-	        Property(t => t.Address.HouseNumber)
+	        Property(t => t.UserAddress.HouseNumber)
 		        //.HasColumnName("Address_HouseNumber")
 		        .IsOptional();
         }

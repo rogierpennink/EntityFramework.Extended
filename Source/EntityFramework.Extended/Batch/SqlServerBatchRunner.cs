@@ -300,7 +300,7 @@ namespace EntityFramework.Batch
 									{
 										paramHandled = true;
 
-										var propertyMap = entityMap.PropertyMaps.FirstOrDefault(m => m.PropertyName == edmType.Name);
+										var propertyMap = entityMap.PropertyMaps.FirstOrDefault(m => m.PropertyName == propertyName);
 										if (propertyMap == null)
 											throw new ArgumentException("The complex type property is not mapped on the current entity.");
 
